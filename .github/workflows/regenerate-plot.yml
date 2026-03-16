@@ -31,6 +31,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ackermann_plot.png
-          git diff --cached --quiet || git commit -m "chore: regenerate ackermann_plot.png [skip ci]"
+          git add -f ackermann_plot.png pulley_plot.png
+          git diff --cached --quiet || git commit -m "chore: regenerate ackermann_plot.png pulley_plot.png [skip ci]"
           git push
