@@ -40,8 +40,8 @@ def compute_ackermann(delta: np.ndarray, L: float, T: float):
 def plot_ackermann(
     L: float = 2.5,
     T: float = 1.5,
-    delta_min_deg: float = 1.0,
-    delta_max_deg: float = 45.0,
+    delta_min_deg: float = 20.0,
+    delta_max_deg: float = 90.0,
     output_file: str = "ackermann_plot.png",
 ) -> str:
     """
