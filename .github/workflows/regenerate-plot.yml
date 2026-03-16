@@ -1,0 +1,36 @@
+name: Regenerate Ackermann Plot
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ackermann_plot.py'
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Regenerate plot
+        run: python ackermann_plot.py
+
+      - name: Commit updated plot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ackermann_plot.png
+          git diff --cached --quiet || git commit -m "chore: regenerate ackermann_plot.png [skip ci]"
+          git push

@@ -7,11 +7,12 @@ Given:
   - track width     T      (metres)
 
 Computes:
-  R       = L / tan(delta)
-  delta_i = arctan(L / (R - T/2))   (inner wheel angle)
-  delta_o = arctan(L / (R + T/2))   (outer wheel angle)
+  R       = L / tan(delta)               (turning radius at rear-axle centre)
+  R_min   = sqrt((R + T/2)^2 + L^2)     (minimum turning radius – outer front corner)
+  delta_i = arctan(L / (R - T/2))        (inner wheel angle)
+  delta_o = arctan(L / (R + T/2))        (outer wheel angle)
 
-Produces a PNG plot of R, delta_i, and delta_o vs delta.
+Produces a PNG plot of R, R_min, delta_i, and delta_o vs delta.
 """
 
 import numpy as np
@@ -22,7 +23,14 @@ matplotlib.use("Agg")  # non-interactive backend for PNG output
 
 
 def compute_ackermann(delta: np.ndarray, L: float, T: float):
-    """Return (R, delta_i, delta_o) for arrays of steering angle *delta* (rad).
+    """Return (R, R_min, delta_i, delta_o) for arrays of steering angle *delta* (rad).
+
+    R       – turning radius at the rear-axle centre  (= L / tan(delta))
+    R_min   – minimum turning radius of the vehicle body, swept by the outer
+              front corner: sqrt((R + T/2)^2 + L^2).  This is the quantity that
+              fully accounts for both the wheelbase *L* and the track width *T*.
+    delta_i – inner front-wheel angle
+    delta_o – outer front-wheel angle
 
     Entries where ``delta == 0`` (straight-ahead, undefined R) or where
     ``R <= T/2`` (geometrically impossible inner-wheel pivot) are returned as
@@ -34,7 +42,9 @@ def compute_ackermann(delta: np.ndarray, L: float, T: float):
         denom_o = R + T / 2.0
         delta_i = np.where(denom_i > 0, np.arctan(L / denom_i), np.nan)
         delta_o = np.where(denom_o > 0, np.arctan(L / denom_o), np.nan)
-    return R, delta_i, delta_o
+        # Minimum turning radius: distance from turn centre to outer front corner
+        R_min = np.where(np.isfinite(R), np.sqrt((R + T / 2.0) ** 2 + L ** 2), np.nan)
+    return R, R_min, delta_i, delta_o
 
 
 def plot_ackermann(
@@ -73,7 +83,7 @@ def plot_ackermann(
     delta_deg = np.linspace(delta_min_deg, delta_max_deg, 500)
     delta_rad = np.deg2rad(delta_deg)
 
-    R, delta_i, delta_o = compute_ackermann(delta_rad, L, T)
+    R, R_min, delta_i, delta_o = compute_ackermann(delta_rad, L, T)
 
     fig, axes = plt.subplots(2, 1, figsize=(9, 8), sharex=True)
     fig.suptitle(
@@ -83,9 +93,23 @@ def plot_ackermann(
 
     # --- top panel: turning radius ---
     ax_r = axes[0]
-    ax_r.plot(delta_deg, R, color="tab:blue", linewidth=2)
-    ax_r.set_ylabel("Turning radius R (m)", fontsize=11)
-    ax_r.set_title(r"$R = \dfrac{L}{\tan(\delta)}$", fontsize=11)
+    ax_r.plot(delta_deg, R, color="tab:blue", linewidth=2, label=r"$R$ (rear axle)")
+    ax_r.plot(
+        delta_deg,
+        R_min,
+        color="tab:red",
+        linewidth=2,
+        linestyle="--",
+        label=r"$R_{\mathrm{min}}$ (outer front corner)",
+    )
+    ax_r.set_ylabel("Turning radius (m)", fontsize=11)
+    ax_r.set_title(
+        r"$R = \dfrac{L}{\tan(\delta)}$"
+        r"  ,  "
+        r"$R_{\mathrm{min}} = \sqrt{(R + T/2)^2 + L^2}$",
+        fontsize=11,
+    )
+    ax_r.legend(fontsize=10)
     ax_r.grid(True, linestyle="--", alpha=0.6)
 
     # --- bottom panel: inner and outer wheel angles ---
